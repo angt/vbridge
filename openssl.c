@@ -19,6 +19,53 @@ static struct openssl_global {
     int index;
 } global;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+static BN_GENCB *
+BN_GENCB_new(void)
+{
+    return OPENSSL_malloc(sizeof(BN_GENCB));
+}
+
+static void
+BN_GENCB_free(BN_GENCB *cb)
+{
+    OPENSSL_free(cb);
+}
+
+static int
+DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
+{
+    dh->p = p;
+    dh->q = q;
+    dh->g = g;
+
+    return 1;
+}
+
+static STACK_OF(X509_OBJECT) *
+X509_STORE_get0_objects(X509_STORE *ctx)
+{
+    return ctx->objs;
+}
+
+static int
+X509_OBJECT_get_type(X509_OBJECT *obj)
+{
+    return obj ? obj->type : X509_LU_FAIL;
+}
+
+static X509 *
+X509_OBJECT_get0_X509(X509_OBJECT *obj)
+{
+    if (!obj || obj->type != X509_LU_X509)
+        return NULL;
+
+    return obj->data.x509;
+}
+
+#endif
+
 static int
 gen_cb(_unused_ int p, _unused_ int n, _unused_ BN_GENCB *cb)
 {
@@ -224,7 +271,11 @@ create_cert(EVP_PKEY *pkey)
 void
 openssl_init(void)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     CRYPTO_malloc_init();
+#else
+    OPENSSL_malloc_init();
+#endif
 
     OPENSSL_no_config();
 
@@ -285,7 +336,12 @@ openssl_get_certs(void)
     if (!store)
         return NULL;
 
-    int n = sk_X509_OBJECT_num(store->objs);
+    STACK_OF(X509_OBJECT) *objs = X509_STORE_get0_objects(store);
+
+    if (!objs)
+        return NULL;
+
+    int n = sk_X509_OBJECT_num(objs);
 
     if (!n)
         return NULL;
@@ -294,12 +350,12 @@ openssl_get_certs(void)
     int k = 0;
 
     for (int i = 0; i < n; i++) {
-        X509_OBJECT *obj = sk_X509_OBJECT_value(store->objs, i);
+        X509_OBJECT *obj = sk_X509_OBJECT_value(objs, i);
 
-        if (!obj || obj->type != X509_LU_X509)
+        if (!obj || X509_OBJECT_get_type(obj) != X509_LU_X509)
             continue;
 
-        char *str = cert_to_str(obj->data.x509);
+        char *str = cert_to_str(X509_OBJECT_get0_X509(obj));
 
         if (str)
             certs[k++] = str;
@@ -346,13 +402,19 @@ openssl_delete_cert(char *str)
     X509_STORE *new_store = X509_STORE_new();
 
     if (new_store) {
-        int n = sk_X509_OBJECT_num(store->objs);
+        STACK_OF(X509_OBJECT) *objs = X509_STORE_get0_objects(store);
+
+        if (!objs)
+            return;
+
+        int n = sk_X509_OBJECT_num(objs);
 
         for (int i = 0; i < n; i++) {
-            X509_OBJECT *obj = sk_X509_OBJECT_value(store->objs, i);
+            X509_OBJECT *obj = sk_X509_OBJECT_value(objs, i);
 
-            if (obj && (obj->type == X509_LU_X509) && X509_cmp(obj->data.x509, cert))
-                X509_STORE_add_cert(new_store, obj->data.x509);
+            if (obj && (X509_OBJECT_get_type(obj) == X509_LU_X509)
+                    && X509_cmp(X509_OBJECT_get0_X509(obj), cert))
+                X509_STORE_add_cert(new_store, X509_OBJECT_get0_X509(obj));
         }
 
         SSL_CTX_set_cert_store(global.ctx, new_store);
@@ -535,8 +597,9 @@ openssl_use_dh(void)
 
     static const unsigned char generator[] = {2};
 
-    dh->p = BN_bin2bn(rfc_2409_prime_1024, sizeof(rfc_2409_prime_1024), NULL);
-    dh->g = BN_bin2bn(generator, sizeof(generator), NULL);
+    DH_set0_pqg(dh, BN_bin2bn(rfc_2409_prime_1024, sizeof(rfc_2409_prime_1024), NULL),
+                    NULL,
+                    BN_bin2bn(generator, sizeof(generator), NULL));
 
     SSL_CTX_set_tmp_dh(global.ctx, dh);
 
@@ -589,14 +652,22 @@ openssl_new_rsa(int len, int exp)
 
     BN_set_word(bn, exp);
 
-    BN_GENCB cb;
-    BN_GENCB_set(&cb, gen_cb, NULL);
+    BN_GENCB *cb = BN_GENCB_new();
+
+    if (!cb) {
+        BN_free(bn);
+        RSA_free(rsa);
+        return NULL;
+    }
+
+    BN_GENCB_set(cb, gen_cb, NULL);
 
     char *str = NULL;
 
-    if (RSA_generate_key_ex(rsa, len, bn, &cb))
+    if (RSA_generate_key_ex(rsa, len, bn, cb))
         str = rsa_to_str(rsa);
 
+    BN_GENCB_free(cb);
     BN_free(bn);
     RSA_free(rsa);
 
