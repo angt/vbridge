@@ -1,0 +1,17 @@
+language: c
+
+addons:
+  apt:
+    packages:
+     - libx11-dev
+     - libxfixes-dev
+     - libxext-dev
+     - libxi-dev
+     - libxtst-dev
+     - libxrandr-dev
+     - libkrb5-dev
+     - libpam0g-dev
+     - libssl-dev
+     - libcap-dev
+
+script: make
