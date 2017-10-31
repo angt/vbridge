@@ -7,7 +7,6 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#endif
 
 static struct client_global {
     const char *host;
@@ -181,3 +180,6 @@ client_init(char *host, char *port, char *user, char *pass)
 
     core_create(&global.core, host, port);
 }
+
+#else
+#endif

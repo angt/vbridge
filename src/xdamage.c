@@ -37,6 +37,7 @@ xdamage_event(XEvent *event)
     if (event->type != global.event + XDamageNotify)
         return 0;
 
+    _unused_
     XDamageNotifyEvent *ev = (XDamageNotifyEvent *)event;
 
     XserverRegion region = XFixesCreateRegion(display.id, 0, 0);

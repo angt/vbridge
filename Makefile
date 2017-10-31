@@ -53,20 +53,18 @@ endif
 ALL_CFLAGS += -fprofile-$(pgo)
 endif
 
--include config.mk
+-include src/config.mk
 
 SERVER   := $(PROG_SERVICE)d
 CLIENT   := $(PROG_SERVICE)
-SOURCES  := $(wildcard *.c)
-TESTS    := $(basename $(filter test-%,$(SOURCES)))
-DOTINS   := $(basename $(wildcard *.in))
+SOURCES  := $(wildcard src/*.c)
+HEADERS  := $(wildcard src/*.h)
 DISTNAME := $(PROG_SERVICE)-$(PROG_VERSION)-$(mode)-$(arch)
 
 ifeq ($(findstring mingw,$(CC)),mingw)
 MN_$(CLIENT).exe := client-win
 LD_client-win.o  := -lws2_32 -lgdi32
 PROGRAMS := $(CLIENT).exe
-DEFAULT  := $(CLIENT).exe
 DIST     := zip
 else
 MN_$(SERVER)       := server
@@ -82,19 +80,18 @@ LD_xdamage.o       := -lXdamage
 LD_auth-pam.o      := -lpam
 LD_auth-gss.o      := -lgssapi_krb5 -lkrb5
 LD_client.o        := -lXrender
-PROGRAMS := $(SERVER) $(CLIENT) $(TESTS)
-DEFAULT  := $(SERVER) $(CLIENT)
+PROGRAMS := $(SERVER) $(CLIENT)
 DIST     := tar.gz
 endif
 
 LD_openssl.o := -lssl -lcrypto
 
 .SUFFIXES:
-.PHONY: default all install dist test clean
+.PHONY: default all install dist test
 
-default: $(DEFAULT)
+default: $(PROGRAMS)
 
-all: $(PROGRAMS)
+all: defaults test
 
 install: $(CLIENT) $(SERVER)
 	$(INSTALL) -m 755 -d $(DESTDIR)$(prefix)/bin
@@ -103,41 +100,46 @@ install: $(CLIENT) $(SERVER)
 
 dist: $(DISTNAME).$(DIST)
 
-test: test-tycho
-	./test-tycho -c 50 $(data) 2> test-tycho.dat
+test: $(patsubst src/test-%.c, src/$(mark)test-%.bin, $(SOURCES))
 
-clean:
-	@rm -f $(PROGRAMS) $(DOTINS) *.[dios] *.mk
+-include src/$(mark)deps.mk
+-include src/$(mark)o.mk
 
-ucs_to_keysym-static.h: ucs_to_keysym.awk keysymdef.h
-	$(QUIET)awk -f $^ > $@
-
--include $(mark)deps.mk
--include $(mark)o.mk
-
-$(foreach k,$(PROGRAMS),\
-    $(eval $(k): $(addprefix $(mark),$(filter $(SOURCES:.c=.o),$(O_$(mark)$(k).o) $(O_$(mark)$(MN_$(k)).o)))))
+$(foreach k,$(PROGRAMS),$(eval $(k): src/$(mark)$(MN_$(k)).bin))
 
 $(PROGRAMS):
-	$(QUIET)$(CC) $(ALL_CFLAGS) $(CPPFLAGS) $(ALL_LDFLAGS) $^ -o $@ $(LDLIBS) $(foreach k,$^,$(LD_$(k:$(mark)%=%)))
+	$(QUIET)cp $< $@
 
-$(DOTINS): %: %.in
-	$(QUIET)sed -n 's/^\([A-Z_]*\)\s\+:=\s\+\(.*\)$$/-e "s^@@\1@@^\2^g"/p' config.mk | xargs sed $< > $@
-
-$(DISTNAME): $(DEFAULT)
+$(DISTNAME): $(PROGRAMS)
 	@$(STRIP) -s -R .comment -R .note -R .eh_frame_hdr -R .eh_frame $^ && mkdir -p $@; cp -rf $^ -t $@
 
-$(mark)deps.mk: $(SOURCES) $(wildcard *.h)
-	@$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -MM $(SOURCES) | sed 's/^\(.*:.*\)$$/$(mark)\1/g' > $@
+src/ucs_to_keysym-static.h: src/ucs_to_keysym.awk src/keysymdef.h
+	$(QUIET)awk -f $^ > $@
 
-$(mark)o.mk: $(mark)deps.mk
-	@sed -e 's/\.[hc]/\.o/g' -e 's/^\(.*\):/O_\1:=/g' $< > $@
-
-config.mk: config.h
+src/config.mk: src/config.h
 	@sed -n "s/^#define\s\+\(PROG_[A-Z_]\+\)\s\+\"*\([^\"]*\)\"*.*$$/\1 := \2/p" $< > $@
 
-$(mark)%.o: %.c
-	$(QUIET)$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -c $< -o $@
+src/$(mark)deps.mk: $(SOURCES) $(HEADERS)
+	@$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -MM $(SOURCES) | sed 's|^\(.*:.*\)$$|src/$(mark)\1|g' > $@
+
+src/$(mark)o.mk: $(patsubst src/%.c, src/$(mark)%.o, $(SOURCES))
+	@for f in $^; do grep -sq '^main$$' "$$f.def" || continue ;\
+	    U="/tmp/$$(basename "$$f").$$$$.und" ;\
+	    cp "$$f.und" "$$U" ;\
+	    while true; do \
+	        (cat "$$U"; fgrep -w -l -f "$$U" src/*.o.def | sed 's/.def/.und/' | xargs cat) 2>/dev/null | sort -u > "$$U".2 ;\
+	        cmp -s "$$U" "$$U".2 && break ;\
+	        mv "$$U".2 "$$U" ;\
+	    done ;\
+	    echo $${f%%.o}.bin: $$f $$(fgrep -w -l -f "$$U" src/*.o.def | sed 's/.def//') ;\
+	    rm -f "$$U"* ;\
+	done > $@
+
+src/$(mark)%.bin:
+	$(QUIET)$(CC) $(ALL_CFLAGS) $(CPPFLAGS) $(ALL_LDFLAGS) $^ -o $@ $(LDLIBS) $(foreach k,$^,$(LD_$(k:src/$(mark)%=%)))
+
+src/$(mark)%.o: src/%.c
+	$(QUIET)$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -c $< -o $@ && objdump -t $@ | awk '/*UND*/{print $$NF >> "$@.und"} /g.*F.*\.text/{print $$NF >> "$@.def"}'
 
 %.tar.gz: %
 	$(QUIET)tar -czf $@ $< --remove-files

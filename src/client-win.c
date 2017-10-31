@@ -5,7 +5,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <windowsx.h>
-#endif
 
 static const char class_name[] = PROG_NAME;
 
@@ -354,3 +353,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
     return 0;
 }
+
+#else
+#endif
