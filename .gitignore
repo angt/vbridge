@@ -1,3 +1,7 @@
 *.o
 *.mk
+*.def
+*.und
+*.bin
+VERSION
 vbridge*
