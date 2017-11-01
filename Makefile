@@ -1,3 +1,7 @@
+PROG_SERVICE := $(shell sed -n 's|.*define.*PROG_SERVICE.*"\(.*\)".*|\1|p' src/config.h)
+PROG_VERSION := $(shell ./version.sh)
+
+CPPFLAGS := -DPROG_VERSION=\"$(PROG_VERSION)\"
 LDFLAGS := -Wl,-O1,--sort-common,--as-needed
 
 ALL_CFLAGS  := -std=c99 -ffreestanding -Wall -Wextra $(CFLAGS)
@@ -52,8 +56,6 @@ ALL_CFLAGS += -O0
 endif
 ALL_CFLAGS += -fprofile-$(pgo)
 endif
-
--include src/config.mk
 
 SERVER   := $(PROG_SERVICE)d
 CLIENT   := $(PROG_SERVICE)
@@ -116,9 +118,6 @@ $(DISTNAME): $(PROGRAMS)
 src/ucs_to_keysym-static.h: src/ucs_to_keysym.awk src/keysymdef.h
 	$(QUIET)awk -f $^ > $@
 
-src/config.mk: src/config.h
-	@sed -n "s/^#define\s\+\(PROG_[A-Z_]\+\)\s\+\"*\([^\"]*\)\"*.*$$/\1 := \2/p" $< > $@
-
 src/$(mark)deps.mk: $(SOURCES) $(HEADERS)
 	@$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -MM $(SOURCES) | sed 's|^\(.*:.*\)$$|src/$(mark)\1|g' > $@
 
@@ -136,7 +135,7 @@ src/$(mark)o.mk: $(patsubst src/%.c, src/$(mark)%.o, $(SOURCES))
 	done > $@
 
 src/$(mark)%.bin:
-	$(QUIET)$(CC) $(ALL_CFLAGS) $(CPPFLAGS) $(ALL_LDFLAGS) $^ -o $@ $(LDLIBS) $(foreach k,$^,$(LD_$(k:src/$(mark)%=%)))
+	$(QUIET)$(CC) $(ALL_CFLAGS) $(ALL_LDFLAGS) $^ -o $@ $(LDLIBS) $(foreach k,$^,$(LD_$(k:src/$(mark)%=%)))
 
 src/$(mark)%.o: src/%.c
 	$(QUIET)$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -c $< -o $@ && objdump -t $@ | awk '/*UND*/{print $$NF >> "$@.und"} /g.*F.*\.text/{print $$NF >> "$@.def"}'

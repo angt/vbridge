@@ -353,8 +353,7 @@ option_run(int argc, char **argv)
     }
 
     if (version) {
-        print("%s version %s\ncopyright (c) %s %s\n",
-              PROG_NAME, PROG_VERSION, PROG_DATE, PROG_COMPANY);
+        print("%s version %s\n", PROG_NAME, PROG_VERSION);
         exit(EXIT_SUCCESS);
     }
 

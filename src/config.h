@@ -3,10 +3,9 @@
 #define PROG_NAME     "VBridge"
 #define PROG_SERVICE  "vbridge"
 
-#define PROG_VERSION  "0.8.3"
-
-#define PROG_COMPANY  "OVH"
-#define PROG_DATE     "2011-2015"
+#ifndef PROG_VERSION
+#define PROG_VERSION  "(unversioned)"
+#endif
 
 #define CONFIG_PORT           "5000"
 
