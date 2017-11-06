@@ -1,16 +1,24 @@
-FROM ubuntu:16.04
+FROM ubuntu:17.10
+ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt update
-RUN apt install -y --no-install-recommends make gcc \
-	libx11-dev libxfixes-dev libxext-dev libxi-dev libxtst-dev libxrandr-dev \
-	libkrb5-dev libpam0g-dev \
-	libssl-dev libcap-dev
-RUN mkdir /home/vbridge
+RUN apt-get update \
+ && apt-get install -y \
+    make gcc \
+    libssl-dev \
+    libpam0g-dev \
+    libcap-dev \
+    libkrb5-dev \
+    libx11-dev \
+    libxext-dev \
+    libxfixes-dev \
+    libxi-dev \
+    libxrandr-dev \
+    libxrender-dev \
+    libxdamage-dev \
+    libxtst-dev
 
-COPY . /home/vbridge
+RUN mkdir -p /tmp/build
+COPY . /tmp/build
 
-RUN useradd vbridge && chown -R vbridge /home/vbridge
-USER vbridge
-
-WORKDIR /home/vbridge
+WORKDIR /tmp/build
 RUN make
