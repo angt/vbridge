@@ -196,6 +196,7 @@ core_recv_all(core_client_t *core)
 
                 core->recv.command++;
             }
+            /* FALLTHRU */
 
         case command_cursor_data:
             {
@@ -226,6 +227,7 @@ core_recv_all(core_client_t *core)
 
                 core->recv.command++;
             }
+            /* FALLTHRU */
 
         case command_image_data:
             {

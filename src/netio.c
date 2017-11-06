@@ -184,7 +184,7 @@ netio_start(netio_t *netio)
 
     if (ret <= 0) {
         switch (SSL_get_error(netio->ssl, ret)) {
-        case SSL_ERROR_WANT_READ:
+        case SSL_ERROR_WANT_READ: /* FALLTHRU */
         case SSL_ERROR_WANT_WRITE:
             return -1;
         case SSL_ERROR_SYSCALL:
@@ -289,6 +289,7 @@ netio_read(netio_t *netio)
         switch (SSL_get_error(netio->ssl, ret)) {
         case SSL_ERROR_WANT_WRITE:
             netio->state |= NETIO_READ_WANT_WRITE;
+            /* FALLTHRU */
         case SSL_ERROR_WANT_READ:
             return -1;
         case SSL_ERROR_SYSCALL:
@@ -351,6 +352,7 @@ netio_write(netio_t *netio)
         switch (SSL_get_error(netio->ssl, ret)) {
         case SSL_ERROR_WANT_READ:
             netio->state |= NETIO_WRITE_WANT_READ;
+            /* FALLTHRU */
         case SSL_ERROR_WANT_WRITE:
             return -1;
         case SSL_ERROR_SYSCALL:

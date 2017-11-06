@@ -61,9 +61,9 @@ set_int(void *dst, const char *src)
         return -1;
 
     switch (str[0]) {
-    case 'G': tmp <<= 10;
-    case 'M': tmp <<= 10;
-    case 'K': tmp <<= 10;
+    case 'G': tmp <<= 10; /* FALLTHRU */
+    case 'M': tmp <<= 10; /* FALLTHRU */
+    case 'K': tmp <<= 10; /* FALLTHRU */
     }
 
     if (tmp < INT_MIN || tmp > INT_MAX)

@@ -1384,6 +1384,7 @@ main(int argc, char **argv)
 
                         c->send.command++;
                     }
+                    /* FALLTHRU */
 
                 case command_cursor_data:
                     {
@@ -1412,6 +1413,7 @@ main(int argc, char **argv)
                         c->image_count++;
                         c->send.command++;
                     }
+                    /* FALLTHRU */
 
                 case command_image_data:
                     {

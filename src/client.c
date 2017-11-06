@@ -423,6 +423,7 @@ send_auth_all(void)
         state++;
         if (send_auth_gss() != -1)
             break;
+        /* FALLTHRU */
     case 1:
 #ifndef NETIO_NO_SSL
         state++;
