@@ -138,7 +138,7 @@ src/$(mark)%.bin:
 	$(QUIET)$(CC) $(ALL_CFLAGS) $(ALL_LDFLAGS) $^ -o $@ $(LDLIBS) $(foreach k,$^,$(LD_$(k:src/$(mark)%=%)))
 
 src/$(mark)%.o: src/%.c
-	$(QUIET)$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -c $< -o $@ && objdump -t $@ | awk '/*UND*/{print $$NF >> "$@.und"} /g.*F.*\.text/{print $$NF >> "$@.def"}'
+	$(QUIET)$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -c $< -o $@ && objdump -t $@ | awk '/\*UND\*/{print $$NF >> "$@.und"} /g.*F.*\.text/{print $$NF >> "$@.def"}'
 
 %.tar.gz: %
 	$(QUIET)tar -czf $@ $< --remove-files
