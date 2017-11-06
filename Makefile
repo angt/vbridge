@@ -104,7 +104,7 @@ dist: $(DISTNAME).$(DIST)
 
 test: $(patsubst src/test-%.c, src/$(mark)test-%.bin, $(SOURCES))
 
--include src/$(mark)deps.mk
+-include src/$(mark)h.mk
 -include src/$(mark)o.mk
 
 $(foreach k,$(PROGRAMS),$(eval $(k): src/$(mark)$(MN_$(k)).bin))
@@ -118,7 +118,7 @@ $(DISTNAME): $(PROGRAMS)
 src/ucs_to_keysym-static.h: src/ucs_to_keysym.awk src/keysymdef.h
 	$(QUIET)awk -f $^ > $@
 
-src/$(mark)deps.mk: $(SOURCES) $(HEADERS)
+src/$(mark)h.mk: $(SOURCES) $(HEADERS)
 	@$(CC) $(ALL_CFLAGS) $(CPPFLAGS) -MM $(SOURCES) | sed 's|^\(.*:.*\)$$|src/$(mark)\1|g' > $@
 
 src/$(mark)o.mk: $(patsubst src/%.c, src/$(mark)%.o, $(SOURCES))
