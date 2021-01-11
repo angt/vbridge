@@ -49,16 +49,18 @@ For the key:
 vBridge needs the following packets to be installed for the compilation:
 - gcc
 - make
-- libx11-dev
-- libxfixes-dev
-- libxext-dev
-- libxi-dev
-- libxtst-dev
-- libxrandr-dev
+- libcap-dev
 - libkrb5-dev
 - libpam0g-dev
 - libssl-dev
-- libcap-dev
+- libx11-dev
+- libxdamage-dev
+- libxext-dev
+- libxfixes-dev
+- libxi-dev
+- libxrandr-dev
+- libxrender-dev
+- libxtst-dev
 
 ### Compilation
 `make` compiles and produces the `vbridge` and `vbridged` binaries.
