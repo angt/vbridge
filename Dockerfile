@@ -17,8 +17,8 @@ RUN apt-get update \
     libxdamage-dev \
     libxtst-dev
 
-RUN mkdir -p /tmp/build
-COPY . /tmp/build
+RUN mkdir -p /build
+COPY . /build
 
-WORKDIR /tmp/build
+WORKDIR /build
 RUN make

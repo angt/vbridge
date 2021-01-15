@@ -8,14 +8,12 @@ vBridge is a client/server tool.
 
 ### Example
 On the desktop you want to connect:
-~~~
-$ vbridged
-~~~
+
+    $ vbridged
 
 On the desktop you want to see the remote one:
-~~~
-$ vbridge host-to-connect-to.tld
-~~~
+
+    $ vbridge host-to-connect-to.tld
 
 ## Authentication
 Two methods are possible: via a key or via login/password.
@@ -31,18 +29,17 @@ For the key:
 - On the client's host, launch the client. It will be authenticated without asking login and password.
 
 ### Options
-~~~
-  --port=PORT              port to listen
-  --ciphers=LIST           sets the list of ciphers
-  --rsa-length=NUMBER      RSA modulus length (in bits)
-  --rsa-exponent=NUMBER    RSA public exponent
-  --ecdh-curve=NAME        ECDH curve name
-  --background             run in background
-  --reinit-cred            reinitialize the user's pam credentials
-  --timeout=NUMBER         inactivity timeout
-  --version                display version information
-  --help                   display this help
-~~~
+
+    --port=PORT              port to listen
+    --ciphers=LIST           sets the list of ciphers
+    --rsa-length=NUMBER      RSA modulus length (in bits)
+    --rsa-exponent=NUMBER    RSA public exponent
+    --ecdh-curve=NAME        ECDH curve name
+    --background             run in background
+    --reinit-cred            reinitialize the user's pam credentials
+    --timeout=NUMBER         inactivity timeout
+    --version                display version information
+    --help                   display this help
 
 ## Compilation
 ### Compilation requirements
@@ -67,10 +64,10 @@ vBridge needs the following packets to be installed for the compilation:
 
 Additionnally, you can compile it inside a Docker container.
 Simply type the commands below:
-~~~
-$ docker build -t vbridge .
-$ docker create vbridge vbridge
-$ docker cp vbridge:/home/vbridge/vbridge .
-$ docker cp vbridge:/home/vbridge/vbridged .
-~~~
+
+    $ docker build -t vbridge .
+    $ docker create --name vbridge vbridge
+    $ docker cp vbridge:/build/vbridge .
+    $ docker cp vbridge:/build/vbridged .
+    $ docker rm -f vbridge
 
