@@ -1,4 +1,4 @@
-FROM ubuntu:17.10
+FROM ubuntu:latest
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update \
