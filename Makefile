@@ -89,11 +89,14 @@ endif
 LD_openssl.o := -lssl -lcrypto
 
 .SUFFIXES:
-.PHONY: default all install dist test
+.PHONY: default all clean install dist test
 
 default: $(PROGRAMS)
 
 all: defaults test
+
+clean:
+	git clean -Xfd
 
 install: $(CLIENT) $(SERVER)
 	$(INSTALL) -m 755 -d $(DESTDIR)$(prefix)/bin
