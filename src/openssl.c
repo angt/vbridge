@@ -220,8 +220,11 @@ create_cert(EVP_PKEY *pkey)
         return;
 
     ASN1_INTEGER_set(X509_get_serialNumber(cert), 1);
-    ASN1_TIME_set_string(X509_get_notBefore(cert), "110111000000Z");
-    ASN1_TIME_set_string(X509_get_notAfter(cert), "310111000000Z");
+
+    time_t now = time(NULL);
+    ASN1_TIME_adj(X509_get_notBefore(cert), now,  -1, 0); // -1d
+    ASN1_TIME_adj(X509_get_notAfter(cert), now, 1096, 0); // +3y
+
     X509_set_pubkey(cert, pkey);
 
     unsigned int n = 0;
